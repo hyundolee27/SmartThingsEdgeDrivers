@@ -36,6 +36,10 @@ local function try_add_device(driver, device_dni, device_ip)
 
   update_device_discovery_cache(driver, device_dni, device_ip, device_info)
   local create_device_msg = driver.discovery_helper.get_device_create_msg(driver, device_dni, device_ip, device_info)
+  if not create_device_msg then
+    log.error_with({ hub_logs = true }, string.format("Failed to get device info. dni= %s, ip= %s", device_dni, device_ip))
+    return "device info not found"
+  end
 
   local credential = driver.discovery_helper.get_credential(driver, device_dni, device_ip)
 
