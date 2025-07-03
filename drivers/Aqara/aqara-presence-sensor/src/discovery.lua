@@ -112,6 +112,7 @@ end
 
 function discovery.do_network_discovery(driver, _, should_continue)
   log.info_with({ hub_logs = true }, string.format("discovery start for Aqara FP2"))
+  processing_devices = {}
   while should_continue() do
     discovery_device(driver)
     socket.sleep(1)
