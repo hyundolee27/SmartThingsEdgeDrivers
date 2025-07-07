@@ -61,7 +61,7 @@ local function create_sse(driver, device, credential)
       local now = os.time()
 
       if not last_disconnected_time then
-        log.error_with({ hub_logs = true }, string.format("Eventsource error: disconnected, dni= %s, time = %s", device.device_network_id, now))
+        log.error_with({ hub_logs = true }, string.format("Eventsource error: disconnected, dni= %s, time = %s, host=%s", device.device_network_id, now, eventsource.url.host))
         device:set_field(fields.LAST_DISCONNECTED_TIME, now)
       else
         local time_diff = os.difftime(now, last_disconnected_time)
@@ -73,7 +73,7 @@ local function create_sse(driver, device, credential)
     end
 
     eventsource.onopen = function()
-      log.info_with({ hub_logs = true }, string.format("Eventsource open: dni= %s", device.device_network_id))
+      log.info_with({ hub_logs = true }, string.format("Eventsource open: dni= %s, host=%s", device.device_network_id, eventsource.url.host))
       device:online()
       device:set_field(fields.LAST_DISCONNECTED_TIME, nil)
       local success, err = status_update(driver, device)
