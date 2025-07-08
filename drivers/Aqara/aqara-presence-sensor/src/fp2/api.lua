@@ -60,15 +60,48 @@ function fp2_api:add_header(key, value)
   self.headers[key] = value
 end
 
-function fp2_api.get_credential(device_ip, socket_builder)
-  local response, error, status = process_rest_response(RestClient.one_shot_get(get_base_url(device_ip) .. "/authcode",
-    ADDITIONAL_HEADERS, socket_builder))
-  if not error and status == 200 then
-    local token = response
-    return token
-  else
-    log.error(string.format("get_credential : ip = %s, failed to get token, error = %s", device_ip, error))
+local function retry_fn(retry_attempts)
+  local count = 0
+  return function()
+    count = count + 1
+    return count < retry_attempts
   end
+end
+
+function fp2_api.get_register_info(device_ip, socket_builder)
+  local client = RestClient.new(get_base_url(device_ip), socket_builder)
+  local register_info = {
+    info = nil,
+    token = nil,
+  }
+
+  local response, error, status = process_rest_response(
+    client:get(get_base_url(device_ip) .. "/info",
+    ADDITIONAL_HEADERS,
+    retry_fn(5)))
+
+  if (not response) or error or (status ~= 200) then
+    log.error(string.format("get_register_info : ip = %s, failed to get info, error = %s", device_ip, error))
+    client:close_socket()
+    return nil, error, status
+  end
+  register_info.info = response
+
+  response, error, status = process_rest_response(
+    client:get(get_base_url(device_ip) .. "/authcode",
+    ADDITIONAL_HEADERS,
+    retry_fn(5)))
+
+  if (not response) or error or (status ~= 200) then
+    log.error(string.format("get_register_info : ip = %s, failed to get authcode, error = %s", device_ip, error))
+    client:close_socket()
+    return nil, error, status
+  end
+  register_info.token = response
+
+  client:close_socket()
+
+  return register_info
 end
 
 function fp2_api.get_info(device_ip, socket_builder)

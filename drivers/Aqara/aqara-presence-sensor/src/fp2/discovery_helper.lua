@@ -54,15 +54,18 @@ function discovery_helper.get_device_create_msg(driver, device_dni, device_ip, d
   return create_device_msg
 end
 
-function discovery_helper.get_credential(driver, bridge_dni, bridge_ip)
-  local credential = fp2_api.get_credential(bridge_ip, fp2_api.labeled_socket_builder(bridge_dni))
+function discovery_helper.get_register_info(driver, device_dni, device_ip)
+  local register_info, error = fp2_api.get_register_info(device_ip, fp2_api.labeled_socket_builder(device_dni))
 
-  if not credential then
-    log.warn("credential is nil")
+
+  if (not register_info) or (not register_info.info) or (not register_info.token) or error then
+    log.warn("invalid register_info")
     return nil
   end
 
-  return "Bearer " .. credential.token
+  register_info.token = "Bearer " .. register_info.token.token
+
+  return register_info
 end
 
 function discovery_helper.get_connection_info(driver, device_dni, device_ip, device_info)
