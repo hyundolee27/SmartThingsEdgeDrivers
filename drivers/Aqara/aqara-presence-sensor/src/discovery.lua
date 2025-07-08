@@ -1,10 +1,11 @@
 local log = require "log"
-local discovery = {}
 local fields = require "fields"
 local discovery_mdns = require "discovery_mdns"
 local socket = require "cosock.socket"
 
-local processing_devices = {}
+local discovery = {
+  processing_devices = {}
+}
 
 function discovery.set_device_field(driver, device)
   local device_cache_value = driver.datastore.discovery_cache[device.device_network_id]
@@ -58,7 +59,7 @@ local function try_add_device(driver, device_dni, device_ip)
   log.info_with({ hub_logs = true }, string.format("try_create_device. dni= %s, ip= %s", device_dni, device_ip))
   local success, ret = pcall(driver.try_create_device, driver, create_device_msg)
   if success then
-    processing_devices[device_dni] = true
+    discovery.processing_devices[device_dni] = true
   else
     log.error_with({ hub_logs = true }, string.format("Failed to try_create_device. dni= %s, %s", device_dni, ret))
   end
@@ -68,7 +69,7 @@ end
 function discovery.device_added(driver, device)
   log.info_with({ hub_logs = true }, string.format("device_added. dni= %s", device.device_network_id))
   discovery.set_device_field(driver, device)
-  processing_devices[device.device_network_id] = nil
+  discovery.processing_devices[device.device_network_id] = nil
   driver.lifecycle_handlers.init(driver, device)
 end
 
@@ -108,7 +109,7 @@ local function discovery_device(driver)
         break
       end
     end
-    if (not processing_devices[dni]) and (not is_already_added) then
+    if (not discovery.processing_devices[dni]) and (not is_already_added) then
       try_add_device(driver, dni, ip)
     end
   end
@@ -116,7 +117,7 @@ end
 
 function discovery.do_network_discovery(driver, _, should_continue)
   log.info_with({ hub_logs = true }, string.format("discovery start for Aqara FP2"))
-  processing_devices = {}
+  discovery.processing_devices = {}
   while should_continue() do
     discovery_device(driver)
     socket.sleep(1)
