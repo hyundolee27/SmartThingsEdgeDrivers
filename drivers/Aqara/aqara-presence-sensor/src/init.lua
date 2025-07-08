@@ -207,6 +207,9 @@ local function device_init(driver, device)
   end
 
   driver.device_manager.set_zone_info_to_latest_state(driver, device)
+  driver.device_manager.init_presence(driver, device)
+  driver.device_manager.init_movement(driver, device)
+  driver.device_manager.init_activity(driver, device)
 
   log.trace(string.format("Creating device monitoring for %s", device.device_network_id))
   create_monitoring_thread(driver, device, device_info)
@@ -219,8 +222,6 @@ local function device_init(driver, device)
     device:offline()
     return
   end
-
-  do_refresh(driver, device, nil)
 end
 
 local function device_info_changed(driver, device, event, args)
