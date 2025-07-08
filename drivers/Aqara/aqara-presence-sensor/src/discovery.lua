@@ -56,8 +56,12 @@ local function try_add_device(driver, device_dni, device_ip)
   end
 
   log.info_with({ hub_logs = true }, string.format("try_create_device. dni= %s, ip= %s", device_dni, device_ip))
-  processing_devices[device_dni] = true
-  driver:try_create_device(create_device_msg)
+  local success, ret = pcall(driver.try_create_device, driver, create_device_msg)
+  if success then
+    processing_devices[device_dni] = true
+  else
+    log.error_with({ hub_logs = true }, string.format("Failed to try_create_device. dni= %s, %s", device_dni, ret))
+  end
   return nil
 end
 
